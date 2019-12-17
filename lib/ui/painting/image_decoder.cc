@@ -59,7 +59,8 @@ static SkISize GetResizedDimensions(SkISize current_size,
 static sk_sp<SkImage> ResizeRasterImage(sk_sp<SkImage> image,
                                         std::optional<uint32_t> target_width,
                                         std::optional<uint32_t> target_height,
-                                        const fml::tracing::TraceFlow& flow) {
+                                        const fml::tracing::TraceFlow& flow,
+                                        SkFilterQuality filter_quality) {
   FML_DCHECK(!image->isTextureBacked());
 
   const auto resized_dimensions =
@@ -88,7 +89,7 @@ static sk_sp<SkImage> ResizeRasterImage(sk_sp<SkImage> image,
     return nullptr;
   }
 
-  if (!image->scalePixels(scaled_bitmap.pixmap(), kLow_SkFilterQuality,
+  if (!image->scalePixels(scaled_bitmap.pixmap(), filter_quality,
                           SkImage::kDisallow_CachingHint)) {
     FML_LOG(ERROR) << "Could not scale pixels";
     return nullptr;
@@ -112,6 +113,7 @@ static sk_sp<SkImage> ImageFromDecompressedData(
     ImageDecoder::ImageInfo info,
     std::optional<uint32_t> target_width,
     std::optional<uint32_t> target_height,
+    SkFilterQuality filter_quality,
     const fml::tracing::TraceFlow& flow) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   flow.Step(__FUNCTION__);
@@ -122,13 +124,14 @@ static sk_sp<SkImage> ImageFromDecompressedData(
     return nullptr;
   }
 
-  return ResizeRasterImage(std::move(image), target_width, target_height, flow);
+  return ResizeRasterImage(std::move(image), target_width, target_height, flow, filter_quality);
 }
 
 static sk_sp<SkImage> ImageFromCompressedData(
     sk_sp<SkData> data,
     std::optional<uint32_t> target_width,
     std::optional<uint32_t> target_height,
+    SkFilterQuality filter_quality,
     const fml::tracing::TraceFlow& flow) {
   TRACE_EVENT0("flutter", __FUNCTION__);
   flow.Step(__FUNCTION__);
@@ -146,7 +149,7 @@ static sk_sp<SkImage> ImageFromCompressedData(
     return nullptr;
   }
 
-  return ResizeRasterImage(decoded_image, target_width, target_height, flow);
+  return ResizeRasterImage(decoded_image, target_width, target_height, flow, filter_quality);
 }
 
 static SkiaGPUObject<SkImage> UploadRasterImage(
@@ -248,11 +251,13 @@ void ImageDecoder::Decode(ImageDescriptor descriptor,
                       descriptor.decompressed_image_info.value(),  //
                       descriptor.target_width,                     //
                       descriptor.target_height,                    //
+                      descriptor.filter_quality,                   //
                       flow                                         //
                       )
                 : ImageFromCompressedData(std::move(descriptor.data),  //
                                           descriptor.target_width,     //
                                           descriptor.target_height,    //
+                                          descriptor.filter_quality,   //
                                           flow);
 
         if (!decompressed) {

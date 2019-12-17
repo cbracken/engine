@@ -1714,10 +1714,16 @@ class Codec extends NativeFieldWrapperClass2 {
 Future<Codec> instantiateImageCodec(Uint8List list, {
   int targetWidth,
   int targetHeight,
+  FilterQuality filterQuality,
 }) {
-  return _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(list, callback, null, targetWidth ?? _kDoNotResizeDimension, targetHeight ?? _kDoNotResizeDimension)
-  );
+  return _futurize((_Callback<Codec> callback) => _instantiateImageCodec(
+      list,
+      callback,
+      null,
+      targetWidth ?? _kDoNotResizeDimension,
+      targetHeight ?? _kDoNotResizeDimension,
+      filterQuality ?? FilterQuality.low.index,
+  ));
 }
 
 /// Instantiates a [Codec] object for an image binary data.
@@ -1731,7 +1737,7 @@ Future<Codec> instantiateImageCodec(Uint8List list, {
 /// If both are equal to [_kDoNotResizeDimension], then the image maintains its real size.
 ///
 /// Returns an error message if the instantiation has failed, null otherwise.
-String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo, int targetWidth, int targetHeight)
+String _instantiateImageCodec(Uint8List list, _Callback<Codec> callback, _ImageInfo imageInfo, int targetWidth, int targetHeight, int filterQuality)
   native 'instantiateImageCodec';
 
 /// Loads a single image frame from a byte array into an [Image] object.
@@ -1764,17 +1770,25 @@ Future<Null> _decodeImageFromListAsync(Uint8List list,
 /// while forcing the image to match the other given dimension. If neither is
 /// specified, then the image maintains its real size.
 void decodeImageFromPixels(
-  Uint8List pixels,
-  int width,
-  int height,
-  PixelFormat format,
-  ImageDecoderCallback callback,
-  {int rowBytes, int targetWidth, int targetHeight}
-) {
+    Uint8List pixels,
+    int width,
+    int height,
+    PixelFormat format,
+    ImageDecoderCallback callback, {
+    int rowBytes,
+    int targetWidth,
+    int targetHeight,
+    FilterQuality filterQuality,
+  }) {
   final _ImageInfo imageInfo = _ImageInfo(width, height, format.index, rowBytes);
-  final Future<Codec> codecFuture = _futurize(
-    (_Callback<Codec> callback) => _instantiateImageCodec(pixels, callback, imageInfo, targetWidth ?? _kDoNotResizeDimension, targetHeight ?? _kDoNotResizeDimension)
-  );
+  final Future<Codec> codecFuture = _futurize((_Callback<Codec> callback) => _instantiateImageCodec(
+      pixels,
+      callback,
+      imageInfo,
+      targetWidth ?? _kDoNotResizeDimension,
+      targetHeight ?? _kDoNotResizeDimension,
+      filterQuality ?? FilterQuality.low.index,
+  ));
   codecFuture.then((Codec codec) => codec.getNextFrame())
       .then((FrameInfo frameInfo) => callback(frameInfo.image));
 }

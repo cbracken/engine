@@ -246,7 +246,7 @@ void Codec::dispose() {
 
 void Codec::RegisterNatives(tonic::DartLibraryNatives* natives) {
   natives->Register({
-      {"instantiateImageCodec", InstantiateImageCodec, 5, true},
+      {"instantiateImageCodec", InstantiateImageCodec, 6, true},
   });
   natives->Register({FOR_EACH_BINDING(DART_REGISTER_NATIVE)});
 }

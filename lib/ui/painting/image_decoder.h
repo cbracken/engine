@@ -46,6 +46,7 @@ class ImageDecoder {
     std::optional<ImageInfo> decompressed_image_info;
     std::optional<uint32_t> target_width;
     std::optional<uint32_t> target_height;
+    SkFilterQuality filter_quality;
   };
 
   using ImageResult = std::function<void(SkiaGPUObject<SkImage>)>;
