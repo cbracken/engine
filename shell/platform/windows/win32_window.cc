@@ -4,6 +4,8 @@
 
 #include "flutter/shell/platform/windows/win32_window.h"
 
+#include <imm.h>
+
 #include <cstring>
 
 #include "win32_dpi_utils.h"
@@ -91,6 +93,7 @@ LRESULT CALLBACK Win32Window::WndProc(HWND const window,
 
     auto that = static_cast<Win32Window*>(cs->lpCreateParams);
     that->window_handle_ = window;
+    that->text_input_manager_.SetWindowHandle(window);
   } else if (Win32Window* that = GetThisFromHandle(window)) {
     return that->HandleMessage(message, wparam, lparam);
   }
@@ -109,10 +112,72 @@ void Win32Window::TrackMouseLeaveEvent(HWND hwnd) {
   }
 }
 
+void Win32Window::OnImeSetContext(UINT const message,
+                                  WPARAM const wparam,
+                                  LPARAM const lparam) {
+  if (wparam != 0) {
+    text_input_manager_.CreateImeWindow();
+  }
+}
+
+void Win32Window::OnImeStartComposition(UINT const message,
+                                        WPARAM const wparam,
+                                        LPARAM const lparam) {
+  text_input_manager_.CreateImeWindow();
+  OnComposeBegin();
+}
+
+void Win32Window::OnImeComposition(UINT const message,
+                                   WPARAM const wparam,
+                                   LPARAM const lparam) {
+  // Update the IME window position.
+  text_input_manager_.UpdateImeWindow();
+
+  if (lparam & GCS_COMPSTR) {
+    // Read the in-progress composing string.
+    long pos = text_input_manager_.GetComposingCursorPosition();
+    std::optional<std::u16string> text =
+        text_input_manager_.GetComposingString();
+    if (text) {
+      OnComposeChange(text.value(), pos);
+    }
+  } else if (lparam & GCS_RESULTSTR) {
+    // Read the committed composing string.
+    long pos = text_input_manager_.GetComposingCursorPosition();
+    std::optional<std::u16string> text = text_input_manager_.GetResultString();
+    if (text) {
+      OnComposeChange(text.value(), pos);
+    }
+    // Next, try reading the composing string. Some Japanese IMEs send a message
+    // containing both a GCS_RESULTSTR and a GCS_COMPSTR when one composition is
+    // committed and another immediately started.
+    text = text_input_manager_.GetResultString();
+    if (text) {
+      OnComposeChange(text.value(), pos);
+    }
+  }
+}
+
+void Win32Window::OnImeEndComposition(UINT const message,
+                                      WPARAM const wparam,
+                                      LPARAM const lparam) {
+  text_input_manager_.DestroyImeWindow();
+  OnComposeEnd();
+}
+
+void Win32Window::OnImeRequest(UINT const message,
+                               WPARAM const wparam,
+                               LPARAM const lparam) {
+  // TODO(cbracken): Handle IMR_RECONVERTSTRING, IMR_DOCUMENTFEED,
+  // and IMR_QUERYCHARPOSITION messages.
+  // https://github.com/flutter/flutter/issues/74547
+}
+
 LRESULT
 Win32Window::HandleMessage(UINT const message,
                            WPARAM const wparam,
                            LPARAM const lparam) noexcept {
+  LPARAM result_lparam = lparam;
   int xPos = 0, yPos = 0;
   UINT width = 0, height = 0;
   UINT button_pressed = 0;
@@ -152,6 +217,12 @@ Win32Window::HandleMessage(UINT const message,
       }
       break;
     }
+    case WM_SETFOCUS:
+      ::CreateCaret(window_handle_, nullptr, 1, 1);
+      break;
+    case WM_KILLFOCUS:
+      ::DestroyCaret();
+      break;
     case WM_LBUTTONDOWN:
     case WM_RBUTTONDOWN:
     case WM_MBUTTONDOWN:
@@ -197,6 +268,40 @@ Win32Window::HandleMessage(UINT const message,
       OnScroll((static_cast<short>(HIWORD(wparam)) /
                 static_cast<double>(WHEEL_DELTA)),
                0.0);
+      break;
+    case WM_INPUTLANGCHANGE:
+      // TODO(cbracken): pass this to TextInputManager to aid with
+      // language-specific issues.
+      break;
+    case WM_IME_SETCONTEXT:
+      OnImeSetContext(message, wparam, lparam);
+      // Strip the ISC_SHOWUICOMPOSITIONWINDOW bit from lparam before passing it
+      // to DefWindowProc() so that the composition window is hidden since
+      // Flutter renders the composing string itself.
+      result_lparam &= ~ISC_SHOWUICOMPOSITIONWINDOW;
+      break;
+    case WM_IME_STARTCOMPOSITION:
+      OnImeStartComposition(message, wparam, lparam);
+      // Suppress further processing by DefWindowProc() so that the default
+      // system IME style isn't used, but rather the one set in the
+      // WM_IME_SETCONTEXT handler.
+      return TRUE;
+    case WM_IME_COMPOSITION:
+      OnImeComposition(message, wparam, lparam);
+      if (lparam & GCS_RESULTSTR) {
+        // Suppress further processing by DefWindowProc() since otherwise it
+        // will emit the result string as WM_CHAR messages on commit. Instead,
+        // committing the composing text to the EditableText string is handled
+        // in TextInputModel::CommitComposing, triggered by
+        // OnImeEndComposition().
+        return TRUE;
+      }
+      break;
+    case WM_IME_ENDCOMPOSITION:
+      OnImeEndComposition(message, wparam, lparam);
+      return TRUE;
+    case WM_IME_REQUEST:
+      OnImeRequest(message, wparam, lparam);
       break;
     case WM_UNICHAR: {
       // Tell third-pary app, we can support Unicode.
@@ -272,7 +377,7 @@ Win32Window::HandleMessage(UINT const message,
       break;
   }
 
-  return DefWindowProc(window_handle_, message, wparam, lparam);
+  return DefWindowProc(window_handle_, message, wparam, result_lparam);
 }
 
 UINT Win32Window::GetCurrentDPI() {

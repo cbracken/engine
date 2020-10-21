@@ -38,6 +38,15 @@ class KeyEventHandler : public KeyboardHookHandler {
   void TextHook(FlutterWindowsView* window,
                 const std::u16string& text) override;
 
+  // |KeyboardHookHandler|
+  void ComposeBeginHook() override;
+
+  // |KeyboardHookHandler|
+  void ComposeEndHook() override;
+
+  // |KeyboardHookHandler|
+  void ComposeChangeHook(const std::u16string& text, int cursor_pos) override;
+
  private:
   // The Flutter system channel for key event messages.
   std::unique_ptr<flutter::BasicMessageChannel<rapidjson::Document>> channel_;
