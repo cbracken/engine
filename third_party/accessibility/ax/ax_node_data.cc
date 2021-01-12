@@ -5,6 +5,9 @@
 #include "ax_node_data.h"
 
 #include <stddef.h>
+#include <cctype>
+#include <codecvt>
+#include <iterator>
 #include <algorithm>
 #include <iterator>
 #include <set>

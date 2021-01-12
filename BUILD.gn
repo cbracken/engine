@@ -113,7 +113,7 @@ group("flutter") {
     ]
 
     # The accessibility library only supports Mac for now.
-    if (is_mac) {
+    if (true) {
       public_deps +=
           [ "//flutter/third_party/accessibility:accessibility_unittests" ]
     }

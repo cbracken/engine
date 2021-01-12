@@ -8,6 +8,7 @@ source_set("base") {
   visibility = [ "//flutter/third_party/accessibility/*" ]
   include_dirs = [ "//flutter/third_party/accessibility" ]
 
+  defines =  [ "_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS" ]
   sources = [
     "auto_reset.h",
     "color_utils.h",
