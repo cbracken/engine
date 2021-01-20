@@ -51,6 +51,9 @@ class WindowBindingHandler {
   // Sets the cursor that should be used when the mouse is over the Flutter
   // content. See mouse_cursor.dart for the values and meanings of cursor_name.
   virtual void UpdateFlutterCursor(const std::string& cursor_name) = 0;
+
+  // Sets the cursor rect in root view coordinates.
+  virtual void UpdateCursorRect(double x, double y, double width, double height) = 0;
 };
 
 }  // namespace flutter

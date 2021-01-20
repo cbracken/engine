@@ -75,6 +75,12 @@ class Win32FlutterWindow : public Win32Window, public WindowBindingHandler {
   void UpdateFlutterCursor(const std::string& cursor_name) override;
 
   // |FlutterWindowBindingHandler|
+  void UpdateCursorRect(double x,
+                        double y,
+                        double width,
+                        double height) override;
+
+  // |FlutterWindowBindingHandler|
   void OnWindowResized() override;
 
  private:

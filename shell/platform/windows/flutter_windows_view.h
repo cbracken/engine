@@ -106,6 +106,9 @@ class FlutterWindowsView : public WindowBindingHandlerDelegate {
                 double delta_y,
                 int scroll_offset_multiplier) override;
 
+  // |WindowBindingHandlerDelegate|
+  void OnCursorRectUpdated(double x, double y, double width, double height) override;
+
  private:
   // Struct holding the mouse state. The engine doesn't keep track of which
   // mouse buttons have been pressed, so it's the embedding's responsibility.

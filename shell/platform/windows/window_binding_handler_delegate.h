@@ -51,6 +51,10 @@ class WindowBindingHandlerDelegate {
                         double delta_x,
                         double delta_y,
                         int scroll_offset_multiplier) = 0;
+
+  // Notifies delegate that the cursor position has changed.
+  // Typically called by currently configured TextInputPlugin.
+  virtual void OnCursorRectUpdated(double x, double y, double width, double height) = 0;
 };
 
 }  // namespace flutter

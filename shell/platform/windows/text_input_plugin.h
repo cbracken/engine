@@ -5,6 +5,7 @@
 #ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_TEXT_INPUT_PLUGIN_H_
 #define FLUTTER_SHELL_PLATFORM_WINDOWS_TEXT_INPUT_PLUGIN_H_
 
+#include <array>
 #include <map>
 #include <memory>
 
@@ -28,10 +29,10 @@ struct Rect {
   Rect(const Rect& rect) = default;
   Rect& operator=(const Rect& other) = default;
 
-  double x;
-  double y;
-  double width;
-  double height;
+  double x = 0.0;
+  double y = 0.0;
+  double width = 0.0;
+  double height = 0.0;
 };
 
 // Implements a text input plugin.
@@ -39,7 +40,8 @@ struct Rect {
 // Specifically handles window events within windows.
 class TextInputPlugin : public KeyboardHookHandler {
  public:
-  explicit TextInputPlugin(flutter::BinaryMessenger* messenger);
+  explicit TextInputPlugin(flutter::BinaryMessenger* messenger,
+                           FlutterWindowsView* view);
 
   virtual ~TextInputPlugin();
 
@@ -69,8 +71,13 @@ class TextInputPlugin : public KeyboardHookHandler {
       const flutter::MethodCall<rapidjson::Document>& method_call,
       std::unique_ptr<flutter::MethodResult<rapidjson::Document>> result);
 
+  Rect GetCursorRect() const;
+
   // The MethodChannel used for communication with the Flutter engine.
   std::unique_ptr<flutter::MethodChannel<rapidjson::Document>> channel_;
+
+  // The associated |FlutterWindowsView|.
+  FlutterWindowsView* view_;
 
   // The active client id.
   int client_id_;
@@ -90,11 +97,16 @@ class TextInputPlugin : public KeyboardHookHandler {
   // range, or of the caret in the case where there is no current composing
   // range. This value is updated via `TextInput.setMarkedTextRect` messages
   // over the text input channel.
-  Rect compose_rect_;
+  Rect composing_rect_;
 
   // A 4x4 matrix that maps from `EditableText` local coordinates to the
   // coordinate system of `PipelineOwner.rootNode`.
-  double editabletext_transform_[4][4];
+  std::array<std::array<double, 4>, 4> editabletext_transform_ = {
+    0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0,
+    0.0, 0.0, 0.0, 0.0
+  };
 };
 
 }  // namespace flutter

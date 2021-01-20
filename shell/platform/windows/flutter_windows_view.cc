@@ -38,7 +38,7 @@ void FlutterWindowsView::SetEngine(
   keyboard_hook_handlers_.push_back(
       std::make_unique<flutter::KeyEventHandler>(internal_plugin_messenger));
   keyboard_hook_handlers_.push_back(
-      std::make_unique<flutter::TextInputPlugin>(internal_plugin_messenger));
+      std::make_unique<flutter::TextInputPlugin>(internal_plugin_messenger, this));
   platform_handler_ = PlatformHandler::Create(internal_plugin_messenger, this);
   cursor_handler_ = std::make_unique<flutter::CursorHandler>(
       internal_plugin_messenger, binding_handler_.get());
@@ -133,6 +133,13 @@ void FlutterWindowsView::OnScroll(double x,
                                   double delta_y,
                                   int scroll_offset_multiplier) {
   SendScroll(x, y, delta_x, delta_y, scroll_offset_multiplier);
+}
+
+void FlutterWindowsView::OnCursorRectUpdated(double x,
+                                             double y,
+                                             double width,
+                                             double height) {
+  binding_handler_->UpdateCursorRect(x, y, width, height);
 }
 
 // Sends new size  information to FlutterEngine.

@@ -10,6 +10,7 @@
 #include <iostream>
 
 #include "flutter/shell/platform/common/cpp/json_method_codec.h"
+#include "flutter/shell/platform/windows/flutter_windows_view.h"
 
 static constexpr char kSetEditingStateMethod[] = "TextInput.setEditingState";
 static constexpr char kClearClientMethod[] = "TextInput.clearClient";
@@ -81,11 +82,12 @@ void TextInputPlugin::KeyboardHook(FlutterWindowsView* view,
   }
 }
 
-TextInputPlugin::TextInputPlugin(flutter::BinaryMessenger* messenger)
+TextInputPlugin::TextInputPlugin(flutter::BinaryMessenger* messenger,
+                                 FlutterWindowsView* view)
     : channel_(std::make_unique<flutter::MethodChannel<rapidjson::Document>>(
           messenger,
           kChannelName,
-          &flutter::JsonMethodCodec::GetInstance())),
+          &flutter::JsonMethodCodec::GetInstance())), view_(view),
       active_model_(nullptr) {
   channel_->SetMethodCallHandler(
       [this](
@@ -196,10 +198,16 @@ void TextInputPlugin::HandleMethodCall(
       result->Error(kInternalConsistencyError, "Composing rect values invalid.");
       return;
     }
-    compose_rect_.x = x->value.GetDouble();
-    compose_rect_.y = y->value.GetDouble();
-    compose_rect_.width = width->value.GetDouble();
-    compose_rect_.height = height->value.GetDouble();
+    composing_rect_.x = x->value.GetDouble();
+    composing_rect_.y = y->value.GetDouble();
+    composing_rect_.width = width->value.GetDouble();
+    composing_rect_.height = height->value.GetDouble();
+
+    Rect transformed_rect = GetCursorRect();
+    view_->OnCursorRectUpdated(transformed_rect.x,
+                               transformed_rect.y,
+                               transformed_rect.width,
+                               transformed_rect.height);
   } else if (method.compare(kSetEditableSizeAndTransform) == 0) {
     if (!method_call.arguments() || method_call.arguments()->IsNull()) {
       result->Error(kBadArgumentError, "Method invoked without args");
@@ -222,6 +230,11 @@ void TextInputPlugin::HandleMethodCall(
       editabletext_transform_[i / 4][i % 4] = entry.GetDouble();
       ++i;
     }
+    Rect transformed_rect = GetCursorRect();
+    view_->OnCursorRectUpdated(transformed_rect.x,
+                               transformed_rect.y,
+                               transformed_rect.width,
+                               transformed_rect.height);
   } else {
     result->NotImplemented();
     return;
@@ -229,6 +242,19 @@ void TextInputPlugin::HandleMethodCall(
   // All error conditions return early, so if nothing has gone wrong indicate
   // success.
   result->Success();
+}
+
+Rect TextInputPlugin::GetCursorRect() const {
+  Rect rect = composing_rect_;
+  rect.x = composing_rect_.x * editabletext_transform_[0][0] +
+           composing_rect_.y * editabletext_transform_[1][0] +
+           editabletext_transform_[3][0] + composing_rect_.width;
+  rect.y = composing_rect_.x * editabletext_transform_[0][1] +
+           composing_rect_.y * editabletext_transform_[1][1] +
+           editabletext_transform_[3][1] + composing_rect_.height;
+  rect.width = composing_rect_.width;
+  rect.height = composing_rect_.height;
+  return rect;
 }
 
 void TextInputPlugin::SendStateUpdate(const TextInputModel& model) {
