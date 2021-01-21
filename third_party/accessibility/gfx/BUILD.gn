@@ -40,7 +40,6 @@ source_set("gfx") {
     "range/gfx_range_export.h",
     "range/range.cc",
     "range/range.h",
-    "range/range_unittest.cc",
     "gfx_export.h",
     "native_widget_types.h",
     "transform.cc",
