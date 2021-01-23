@@ -10,9 +10,43 @@
 
 #include <imm.h>
 
-#include <memory>
-
 namespace flutter {
+
+// RAII wrapper for IMM32 IMM contexts.
+//
+// Gets the current IMM context on construction and releases it on destruction.
+class ImmContext {
+ public:
+  explicit ImmContext(HWND window_handle) noexcept;
+  ~ImmContext();
+
+  ImmContext(const ImmContext&) = delete;
+  ImmContext& operator=(const ImmContext&) = delete;
+
+  // Returns the IMM context handle.
+  HIMC get() const;
+
+ private:
+  HWND window_handle_ = nullptr;
+  HIMC imm_context_ = nullptr;
+};
+
+ImmContext::ImmContext(HWND window_handle) noexcept : window_handle_(window_handle) {
+  if (window_handle_ != nullptr) {
+    imm_context_ = ::ImmGetContext(window_handle_);
+  }
+}
+
+ImmContext::~ImmContext() {
+  if (window_handle_ != nullptr && imm_context_ != nullptr) {
+    ::ImmReleaseContext(window_handle_, imm_context_);
+  }
+}
+
+HIMC ImmContext::get() const {
+  return imm_context_;
+}
+
 
 void TextInputManager::SetWindowHandle(HWND window_handle) {
   window_handle_ = window_handle;
@@ -51,12 +85,7 @@ void TextInputManager::UpdateImeWindow() {
   if (window_handle_ == nullptr) {
     return;
   }
-
-  HIMC imm_context = ::ImmGetContext(window_handle_);
-  if (imm_context) {
-    MoveImeWindow(imm_context);
-    ::ImmReleaseContext(window_handle_, imm_context);
-  }
+  MoveImeWindow();
 }
 
 void TextInputManager::UpdateCaretRect(const Rect& rect) {
@@ -65,13 +94,7 @@ void TextInputManager::UpdateCaretRect(const Rect& rect) {
   if (window_handle_ == nullptr) {
     return;
   }
-
-  // TODO(cbracken): wrap these in an RAII container.
-  HIMC imm_context = ::ImmGetContext(window_handle_);
-  if (imm_context) {
-    MoveImeWindow(imm_context);
-    ::ImmReleaseContext(window_handle_, imm_context);
-  }
+  MoveImeWindow();
 }
 
 long TextInputManager::GetComposingCursorPosition() const {
@@ -79,12 +102,11 @@ long TextInputManager::GetComposingCursorPosition() const {
     return false;
   }
 
-  HIMC imm_context = ::ImmGetContext(window_handle_);
-  if (imm_context) {
+  ImmContext imm_context(window_handle_);
+  if (imm_context.get()) {
     // Read the cursor position within the composing string.
     const int pos =
-        ImmGetCompositionStringW(imm_context, GCS_CURSORPOS, nullptr, 0);
-    ::ImmReleaseContext(window_handle_, imm_context);
+        ImmGetCompositionStringW(imm_context.get(), GCS_CURSORPOS, nullptr, 0);
     return pos;
   }
   return -1;
@@ -102,26 +124,24 @@ std::optional<std::u16string> TextInputManager::GetString(int type) const {
   if (window_handle_ == nullptr || !ime_active_) {
     return std::nullopt;
   }
-  HIMC imm_context = ::ImmGetContext(window_handle_);
-  if (imm_context) {
+  ImmContext imm_context(window_handle_);
+  if (imm_context.get()) {
     // Read the composing string length.
     const long compose_bytes =
-        ::ImmGetCompositionString(imm_context, type, nullptr, 0);
+        ::ImmGetCompositionString(imm_context.get(), type, nullptr, 0);
     const long compose_length = compose_bytes / sizeof(wchar_t);
     if (compose_length <= 0) {
-      ::ImmReleaseContext(window_handle_, imm_context);
       return std::nullopt;
     }
 
     std::u16string text(compose_length, '\0');
-    ::ImmGetCompositionString(imm_context, type, &text[0], compose_bytes);
-    ::ImmReleaseContext(window_handle_, imm_context);
+    ::ImmGetCompositionString(imm_context.get(), type, &text[0], compose_bytes);
     return text;
   }
   return std::nullopt;
 }
 
-void TextInputManager::MoveImeWindow(HIMC imm_context) {
+void TextInputManager::MoveImeWindow() {
   if (GetFocus() != window_handle_ || !ime_active_) {
     return;
   }
@@ -129,11 +149,14 @@ void TextInputManager::MoveImeWindow(HIMC imm_context) {
   LONG y = caret_rect_.top();
   ::SetCaretPos(x, y);
 
-  COMPOSITIONFORM cf = {CFS_POINT, {x, y}};
-  ::ImmSetCompositionWindow(imm_context, &cf);
+  ImmContext imm_context(window_handle_);
+  if (imm_context.get()) {
+    COMPOSITIONFORM cf = {CFS_POINT, {x, y}};
+    ::ImmSetCompositionWindow(imm_context.get(), &cf);
 
-  CANDIDATEFORM candidate_form = {0, CFS_CANDIDATEPOS, {x, y}, {0, 0, 0, 0}};
-  ::ImmSetCandidateWindow(imm_context, &candidate_form);
+    CANDIDATEFORM candidate_form = {0, CFS_CANDIDATEPOS, {x, y}, {0, 0, 0, 0}};
+    ::ImmSetCandidateWindow(imm_context.get(), &candidate_form);
+  }
 }
 
 }  // namespace flutter

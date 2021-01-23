@@ -86,7 +86,7 @@ class TextInputManager {
 
   // Moves the IME composing and candidates windows to the current caret
   // position.
-  void MoveImeWindow(HIMC imm_context);
+  void MoveImeWindow();
 
   // The window with which the IME windows are associated.
   HWND window_handle_ = nullptr;
