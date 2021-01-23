@@ -123,6 +123,8 @@ void Win32Window::OnImeSetContext(UINT const message,
 void Win32Window::OnImeStartComposition(UINT const message,
                                         WPARAM const wparam,
                                         LPARAM const lparam) {
+  printf(">>> start composing\n"); fflush(stdout);
+  composing_ = true;
   text_input_manager_.CreateImeWindow();
   OnComposeBegin();
 }
@@ -161,8 +163,10 @@ void Win32Window::OnImeComposition(UINT const message,
 void Win32Window::OnImeEndComposition(UINT const message,
                                       WPARAM const wparam,
                                       LPARAM const lparam) {
+  printf(">>> end composing\n"); fflush(stdout);
   text_input_manager_.DestroyImeWindow();
   OnComposeEnd();
+  composing_ = false;
 }
 
 void Win32Window::OnImeRequest(UINT const message,
@@ -274,6 +278,7 @@ Win32Window::HandleMessage(UINT const message,
       // language-specific issues.
       break;
     case WM_IME_SETCONTEXT:
+      printf("~~~~~~~~~~~~ WM_IME_SETCONTEXT\n");
       OnImeSetContext(message, wparam, lparam);
       // Strip the ISC_SHOWUICOMPOSITIONWINDOW bit from lparam before passing it
       // to DefWindowProc() so that the composition window is hidden since
@@ -281,14 +286,17 @@ Win32Window::HandleMessage(UINT const message,
       result_lparam &= ~ISC_SHOWUICOMPOSITIONWINDOW;
       break;
     case WM_IME_STARTCOMPOSITION:
+      printf("~~~~~~~~~~~~ WM_IME_STARTCOMPOSITION\n");
       OnImeStartComposition(message, wparam, lparam);
       // Suppress further processing by DefWindowProc() so that the default
       // system IME style isn't used, but rather the one set in the
       // WM_IME_SETCONTEXT handler.
       return TRUE;
     case WM_IME_COMPOSITION:
+      printf("~~~~~~~~~~~~ WM_IME_COMPOSITION\n");
       OnImeComposition(message, wparam, lparam);
-      if (lparam & GCS_RESULTSTR) {
+      fflush(stdout);
+      if (lparam & GCS_RESULTSTR || lparam & GCS_COMPSTR) {
         // Suppress further processing by DefWindowProc() since otherwise it
         // will emit the result string as WM_CHAR messages on commit. Instead,
         // committing the composing text to the EditableText string is handled
@@ -298,12 +306,14 @@ Win32Window::HandleMessage(UINT const message,
       }
       break;
     case WM_IME_ENDCOMPOSITION:
+      printf("~~~~~~~~~~~~ WM_IME_ENDCOMPOSITION\n");
       OnImeEndComposition(message, wparam, lparam);
       return TRUE;
     case WM_IME_REQUEST:
       OnImeRequest(message, wparam, lparam);
       break;
     case WM_UNICHAR: {
+      printf("~~~~~~~~~~~~ WM_UNICHAR\n");
       // Tell third-pary app, we can support Unicode.
       if (wparam == UNICODE_NOCHAR)
         return TRUE;
@@ -314,6 +324,7 @@ Win32Window::HandleMessage(UINT const message,
     case WM_SYSDEADCHAR:
     case WM_CHAR:
     case WM_SYSCHAR: {
+      printf("~~~~~~~~~~~~ WM_SYSCHAR\n");
       static wchar_t s_pending_high_surrogate = 0;
 
       wchar_t character = static_cast<wchar_t>(wparam);
@@ -339,6 +350,7 @@ Win32Window::HandleMessage(UINT const message,
 
         bool handled = OnKey(keycode_for_char_message_, scancode, WM_KEYDOWN,
                              code_point, extended);
+        fflush(stdout);
         keycode_for_char_message_ = 0;
         if (handled) {
           // If the OnKey handler handles the message, then return so we don't
@@ -360,13 +372,23 @@ Win32Window::HandleMessage(UINT const message,
       if (message == WM_CHAR && s_pending_high_surrogate == 0 &&
           character >= u' ') {
         OnText(text);
+        fflush(stdout);
       }
       break;
     }
     case WM_KEYDOWN:
+      printf("~~~~~~~~~~~~ WM_KEYDOWN\n");
     case WM_SYSKEYDOWN:
+      printf("~~~~~~~~~~~~ WM_SYSKEYDOWN\n");
     case WM_KEYUP:
+      printf("~~~~~~~~~~~~ WM_KEYUP\n");
     case WM_SYSKEYUP:
+      printf("~~~~~~~~~~~~ WM_SYSKEYUP\n");
+      if (composing_) {
+        printf("--- IME is active, bailing out\n");
+        fflush(stdout);
+        break;
+      }
       const bool is_keydown_message =
           (message == WM_KEYDOWN || message == WM_SYSKEYDOWN);
       // Check if this key produces a character. If so, the key press should
@@ -386,8 +408,10 @@ Win32Window::HandleMessage(UINT const message,
       }
       const int action = is_keydown_message ? WM_KEYDOWN : WM_KEYUP;
       if (OnKey(keyCode, scancode, action, 0, extended)) {
+        fflush(stdout);
         return 0;
       }
+      fflush(stdout);
       break;
   }
 

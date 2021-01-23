@@ -204,6 +204,7 @@ bool KeyEventHandler::KeyboardHook(FlutterWindowsView* view,
                                    int action,
                                    char32_t character,
                                    bool extended) {
+  printf("####### KeyEventHandler::KeyboardHook: k:%d, s:%d, a:%d, %d\n", key, scancode, action, character); fflush(stdout);
   const uint64_t id = CalculateEventId(scancode, action, extended);
   if (FindPendingEvent(id) != nullptr) {
     // Don't pass messages that we synthesized to the framework again.

@@ -126,6 +126,7 @@ void FlutterWindowsView::OnPointerLeave() {
 }
 
 void FlutterWindowsView::OnText(const std::u16string& text) {
+  printf("++++++++++++++++++ FlutterWindowsView::OnText\n");
   SendText(text);
 }
 
@@ -134,6 +135,7 @@ bool FlutterWindowsView::OnKey(int key,
                                int action,
                                char32_t character,
                                bool extended) {
+  printf("================ FlutterWindowsView::OnKey: '%c'\n", character);
   return SendKey(key, scancode, action, character, extended);
 }
 
@@ -233,6 +235,7 @@ void FlutterWindowsView::SendPointerLeave() {
 }
 
 void FlutterWindowsView::SendText(const std::u16string& text) {
+  printf("++++++++++++++++++ FlutterWindowsView::SendText\n");
   for (const auto& handler : keyboard_hook_handlers_) {
     handler->TextHook(this, text);
   }
@@ -243,6 +246,7 @@ bool FlutterWindowsView::SendKey(int key,
                                  int action,
                                  char32_t character,
                                  bool extended) {
+  printf("================ FlutterWindowsView::SendKey: '%c'\n", character);
   for (const auto& handler : keyboard_hook_handlers_) {
     if (handler->KeyboardHook(this, key, scancode, action, character,
                               extended)) {

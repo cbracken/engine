@@ -107,6 +107,7 @@ std::optional<std::u16string> TextInputManager::GetString(int type) const {
     // Read the composing string length.
     const long compose_bytes =
         ::ImmGetCompositionString(imm_context, type, nullptr, 0);
+    printf("############# Compose bytes: %ld\n", compose_bytes);
     const long compose_length = compose_bytes / sizeof(wchar_t);
     if (compose_length <= 0) {
       ::ImmReleaseContext(window_handle_, imm_context);

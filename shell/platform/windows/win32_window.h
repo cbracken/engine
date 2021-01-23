@@ -182,6 +182,9 @@ class Win32Window {
   // message.
   int keycode_for_char_message_ = 0;
 
+  // True when IME composing mode is active.
+  bool composing_ = false;
+
  protected:
   TextInputManager text_input_manager_;
 };

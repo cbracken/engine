@@ -54,6 +54,7 @@ namespace flutter {
 
 void TextInputPlugin::TextHook(FlutterWindowsView* view,
                                const std::u16string& text) {
+  printf("+++++++++++++++ TextPlugin::TextHook\n");
   if (active_model_ == nullptr) {
     return;
   }
@@ -67,6 +68,7 @@ bool TextInputPlugin::KeyboardHook(FlutterWindowsView* view,
                                    int action,
                                    char32_t character,
                                    bool extended) {
+  printf("####### TextPlugin::KeyboardHook: k:%d, s:%d, a:%d, %d\n", key, scancode, action, character); fflush(stdout);
   if (active_model_ == nullptr) {
     return false;
   }
