@@ -5,7 +5,7 @@
 #ifndef UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_WIN_UNITTEST_H_
 #define UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_WIN_UNITTEST_H_
 
-#include "ui/accessibility/platform/ax_platform_node_unittest.h"
+#include "ax_platform_node_unittest.h"
 
 #include <memory>
 #include <unordered_set>

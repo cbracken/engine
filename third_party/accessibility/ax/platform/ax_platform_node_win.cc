@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/accessibility/platform/ax_platform_node_win.h"
+#include "ax_platform_node_win.h"
 
 #include <wrl/client.h>
 #include <wrl/implements.h>
@@ -15,44 +15,43 @@
 #include <utility>
 #include <vector>
 
-#include "base/json/json_writer.h"
-#include "base/lazy_instance.h"
-#include "base/metrics/histogram_functions.h"
-#include "base/numerics/safe_conversions.h"
-#include "base/strings/string_number_conversions.h"
-#include "base/strings/string_util.h"
-#include "base/strings/utf_string_conversions.h"
-#include "base/threading/thread_task_runner_handle.h"
-#include "base/values.h"
-#include "base/win/enum_variant.h"
-#include "base/win/scoped_bstr.h"
-#include "base/win/scoped_safearray.h"
-#include "base/win/scoped_variant.h"
-#include "base/win/variant_vector.h"
-#include "skia/ext/skia_utils_win.h"
-#include "third_party/iaccessible2/ia2_api_all.h"
-#include "third_party/skia/include/core/SkColor.h"
-#include "ui/accessibility/accessibility_features.h"
-#include "ui/accessibility/accessibility_switches.h"
-#include "ui/accessibility/ax_action_data.h"
-#include "ui/accessibility/ax_active_popup.h"
-#include "ui/accessibility/ax_constants.mojom.h"
-#include "ui/accessibility/ax_enum_util.h"
-#include "ui/accessibility/ax_mode_observer.h"
-#include "ui/accessibility/ax_node_data.h"
-#include "ui/accessibility/ax_node_position.h"
-#include "ui/accessibility/ax_role_properties.h"
-#include "ui/accessibility/ax_tree_data.h"
-#include "ui/accessibility/platform/ax_fragment_root_win.h"
-#include "ui/accessibility/platform/ax_platform_node_delegate.h"
-#include "ui/accessibility/platform/ax_platform_node_delegate_utils_win.h"
-#include "ui/accessibility/platform/ax_platform_node_textchildprovider_win.h"
-#include "ui/accessibility/platform/ax_platform_node_textprovider_win.h"
-#include "ui/accessibility/platform/ax_platform_relation_win.h"
-#include "ui/accessibility/platform/uia_registrar_win.h"
-#include "ui/base/win/atl_module.h"
-#include "ui/display/win/screen_win.h"
-#include "ui/gfx/geometry/rect_conversions.h"
+// #include "base/lazy_instance.h"
+// #include "base/metrics/histogram_functions.h"
+// #include "base/numerics/safe_conversions.h"
+// #include "base/strings/string_number_conversions.h"
+// #include "base/strings/string_utils.h"
+// #include "base/strings/utf_string_conversions.h"
+// #include "base/threading/thread_task_runner_handle.h"
+// #include "base/values.h"
+// #include "base/win/enum_variant.h"
+// #include "base/win/scoped_bstr.h"
+// #include "base/win/scoped_safearray.h"
+// #include "base/win/scoped_variant.h"
+// #include "base/win/variant_vector.h"
+// #include "skia/ext/skia_utils_win.h"
+// #include "accessibility/accessibility_features.h"
+// #include "ui/accessibility/accessibility_switches.h"
+#include "ax/ax_action_data.h"
+//#include "ax/ax_active_popup.h"
+//#include "ax/ax_constants.mojom.h"
+#include "ax/ax_enum_util.h"
+#include "ax/ax_mode_observer.h"
+#include "ax/ax_node_data.h"
+#include "ax/ax_node_position.h"
+#include "ax/ax_role_properties.h"
+#include "ax/ax_tree_data.h"
+
+//#include "ax_fragment_root_win.h"
+#include "ax_platform_node_delegate.h"
+//#include "ax_platform_node_delegate_utils_win.h"
+//#include "ax_platform_node_textchildprovider_win.h"
+//#include "ax_platform_node_textprovider_win.h"
+//#include "ax_platform_relation_win.h"
+//#include "uia_registrar_win.h"
+
+//#include "ui/base/win/atl_module.h"
+//#include "ui/display/win/screen_win.h"
+//#include "ui/gfx/geometry/rect_conversions.h"
 
 //
 // Macros to use at the top of any AXPlatformNodeWin function that implements
@@ -221,7 +220,7 @@ constexpr int kLargeChangeScaleFactor = 10;
 // cursor keys are used to scroll a webpage.
 constexpr float kSmallScrollIncrement = 40.0f;
 
-void AppendTextToString(base::string16 extra_text, base::string16* string) {
+void AppendTextToString(std::u16string extra_text, std::u16string* string) {
   if (extra_text.empty())
     return;
 
@@ -230,7 +229,7 @@ void AppendTextToString(base::string16 extra_text, base::string16* string) {
     return;
   }
 
-  *string += base::string16(L". ") + extra_text;
+  *string += std::u16string(L". ") + extra_text;
 }
 
 // Helper function to GetPatternProviderFactoryMethod that, given a node,
@@ -321,8 +320,8 @@ void AXPlatformNodeWin::ClearOwnRelations() {
 
 // Static
 void AXPlatformNodeWin::SanitizeStringAttributeForUIAAriaProperty(
-    const base::string16& input,
-    base::string16* output) {
+    const std::u16string& input,
+    std::u16string* output) {
   DCHECK(output);
   // According to the UIA Spec, these characters need to be escaped with a
   // backslash in an AriaProperties string: backslash, equals and semicolon.
@@ -333,10 +332,10 @@ void AXPlatformNodeWin::SanitizeStringAttributeForUIAAriaProperty(
 }
 
 void AXPlatformNodeWin::StringAttributeToUIAAriaProperty(
-    std::vector<base::string16>& properties,
+    std::vector<std::u16string>& properties,
     ax::mojom::StringAttribute attribute,
     const char* uia_aria_property) {
-  base::string16 value;
+  std::u16string value;
   if (GetString16Attribute(attribute, &value)) {
     SanitizeStringAttributeForUIAAriaProperty(value, &value);
     properties.push_back(base::ASCIIToUTF16(uia_aria_property) + L"=" + value);
@@ -344,7 +343,7 @@ void AXPlatformNodeWin::StringAttributeToUIAAriaProperty(
 }
 
 void AXPlatformNodeWin::BoolAttributeToUIAAriaProperty(
-    std::vector<base::string16>& properties,
+    std::vector<std::u16string>& properties,
     ax::mojom::BoolAttribute attribute,
     const char* uia_aria_property) {
   bool value;
@@ -355,7 +354,7 @@ void AXPlatformNodeWin::BoolAttributeToUIAAriaProperty(
 }
 
 void AXPlatformNodeWin::IntAttributeToUIAAriaProperty(
-    std::vector<base::string16>& properties,
+    std::vector<std::u16string>& properties,
     ax::mojom::IntAttribute attribute,
     const char* uia_aria_property) {
   int value;
@@ -366,7 +365,7 @@ void AXPlatformNodeWin::IntAttributeToUIAAriaProperty(
 }
 
 void AXPlatformNodeWin::FloatAttributeToUIAAriaProperty(
-    std::vector<base::string16>& properties,
+    std::vector<std::u16string>& properties,
     ax::mojom::FloatAttribute attribute,
     const char* uia_aria_property) {
   float value;
@@ -377,7 +376,7 @@ void AXPlatformNodeWin::FloatAttributeToUIAAriaProperty(
 }
 
 void AXPlatformNodeWin::StateToUIAAriaProperty(
-    std::vector<base::string16>& properties,
+    std::vector<std::u16string>& properties,
     ax::mojom::State state,
     const char* uia_aria_property) {
   const AXNodeData& data = GetData();
@@ -387,10 +386,10 @@ void AXPlatformNodeWin::StateToUIAAriaProperty(
 }
 
 void AXPlatformNodeWin::HtmlAttributeToUIAAriaProperty(
-    std::vector<base::string16>& properties,
+    std::vector<std::u16string>& properties,
     const char* html_attribute_name,
     const char* uia_aria_property) {
-  base::string16 html_attribute_value;
+  std::u16string html_attribute_value;
   if (GetData().GetHtmlAttribute(html_attribute_name, &html_attribute_value)) {
     SanitizeStringAttributeForUIAAriaProperty(html_attribute_value,
                                               &html_attribute_value);
@@ -631,7 +630,7 @@ void AXPlatformNodeWin::NotifyAccessibilityEvent(ax::mojom::Event event_type) {
       UpdateComputedHypertext();
   }
 
-  if (base::Optional<DWORD> native_event = MojoEventToMSAAEvent(event_type)) {
+  if (std::optional<DWORD> native_event = MojoEventToMSAAEvent(event_type)) {
     HWND hwnd = GetDelegate()->GetTargetForNativeAccessibilityEvent();
     if (!hwnd)
       return;
@@ -639,7 +638,7 @@ void AXPlatformNodeWin::NotifyAccessibilityEvent(ax::mojom::Event event_type) {
     ::NotifyWinEvent((*native_event), hwnd, OBJID_CLIENT, -GetUniqueId());
   }
 
-  if (base::Optional<PROPERTYID> uia_property =
+  if (std::optional<PROPERTYID> uia_property =
           MojoEventToUIAProperty(event_type)) {
     // For this event, we're not concerned with the old value.
     base::win::ScopedVariant old_value;
@@ -651,7 +650,7 @@ void AXPlatformNodeWin::NotifyAccessibilityEvent(ax::mojom::Event event_type) {
                                              new_value);
   }
 
-  if (base::Optional<EVENTID> uia_event = MojoEventToUIAEvent(event_type))
+  if (std::optional<EVENTID> uia_event = MojoEventToUIAEvent(event_type))
     ::UiaRaiseAutomationEvent(this, (*uia_event));
 
   // Keep track of objects that are a target of an alert event.
@@ -669,7 +668,7 @@ gfx::Range AXPlatformNodeWin::GetActiveCompositionOffsets() const {
 
 void AXPlatformNodeWin::OnActiveComposition(
     const gfx::Range& range,
-    const base::string16& active_composition_text,
+    const std::u16string& active_composition_text,
     bool is_composition_committed) {
   // Cache the composition range that will be used when
   // GetActiveComposition and GetConversionTarget is called in
@@ -682,7 +681,7 @@ void AXPlatformNodeWin::OnActiveComposition(
 
 void AXPlatformNodeWin::FireUiaTextEditTextChangedEvent(
     const gfx::Range& range,
-    const base::string16& active_composition_text,
+    const std::u16string& active_composition_text,
     bool is_composition_committed) {
   if (!::switches::IsExperimentalAccessibilityPlatformUIAEnabled()) {
     return;
@@ -815,7 +814,7 @@ IFACEMETHODIMP AXPlatformNodeWin::get_ExpandCollapseState(
 IFACEMETHODIMP AXPlatformNodeWin::get_Column(int* result) {
   WIN_ACCESSIBILITY_API_HISTOGRAM(UMA_API_GRIDITEM_GET_COLUMN);
   UIA_VALIDATE_CALL_1_ARG(result);
-  base::Optional<int> column = GetTableColumn();
+  std::optional<int> column = GetTableColumn();
   if (!column)
     return E_FAIL;
   *result = *column;
@@ -825,7 +824,7 @@ IFACEMETHODIMP AXPlatformNodeWin::get_Column(int* result) {
 IFACEMETHODIMP AXPlatformNodeWin::get_ColumnSpan(int* result) {
   WIN_ACCESSIBILITY_API_HISTOGRAM(UMA_API_GRIDITEM_GET_COLUMNSPAN);
   UIA_VALIDATE_CALL_1_ARG(result);
-  base::Optional<int> column_span = GetTableColumnSpan();
+  std::optional<int> column_span = GetTableColumnSpan();
   if (!column_span)
     return E_FAIL;
   *result = *column_span;
@@ -850,7 +849,7 @@ IFACEMETHODIMP AXPlatformNodeWin::get_ContainingGrid(
 IFACEMETHODIMP AXPlatformNodeWin::get_Row(int* result) {
   WIN_ACCESSIBILITY_API_HISTOGRAM(UMA_API_GRIDITEM_GET_ROW);
   UIA_VALIDATE_CALL_1_ARG(result);
-  base::Optional<int> row = GetTableRow();
+  std::optional<int> row = GetTableRow();
   if (!row)
     return E_FAIL;
   *result = *row;
@@ -860,7 +859,7 @@ IFACEMETHODIMP AXPlatformNodeWin::get_Row(int* result) {
 IFACEMETHODIMP AXPlatformNodeWin::get_RowSpan(int* result) {
   WIN_ACCESSIBILITY_API_HISTOGRAM(UMA_API_GRIDITEM_GET_ROWSPAN);
   UIA_VALIDATE_CALL_1_ARG(result);
-  base::Optional<int> row_span = GetTableRowSpan();
+  std::optional<int> row_span = GetTableRowSpan();
   if (!row_span)
     return E_FAIL;
   *result = *row_span;
@@ -891,7 +890,7 @@ IFACEMETHODIMP AXPlatformNodeWin::get_RowCount(int* result) {
   WIN_ACCESSIBILITY_API_HISTOGRAM(UMA_API_GRID_GET_ROWCOUNT);
   UIA_VALIDATE_CALL_1_ARG(result);
 
-  base::Optional<int> row_count = GetTableAriaRowCount();
+  std::optional<int> row_count = GetTableAriaRowCount();
   if (!row_count)
     row_count = GetTableRowCount();
 
@@ -905,7 +904,7 @@ IFACEMETHODIMP AXPlatformNodeWin::get_ColumnCount(int* result) {
   WIN_ACCESSIBILITY_API_HISTOGRAM(UMA_API_GRID_GET_COLUMNCOUNT);
   UIA_VALIDATE_CALL_1_ARG(result);
 
-  base::Optional<int> column_count = GetTableAriaColumnCount();
+  std::optional<int> column_count = GetTableAriaColumnCount();
   if (!column_count)
     column_count = GetTableColumnCount();
 
@@ -1214,7 +1213,7 @@ IFACEMETHODIMP AXPlatformNodeWin::GetColumnHeaderItems(SAFEARRAY** result) {
   WIN_ACCESSIBILITY_API_HISTOGRAM(UMA_API_TABLEITEM_GETCOLUMNHEADERITEMS);
   UIA_VALIDATE_CALL_1_ARG(result);
 
-  base::Optional<int> column = GetTableColumn();
+  std::optional<int> column = GetTableColumn();
   if (!column)
     return E_FAIL;
 
@@ -1232,7 +1231,7 @@ IFACEMETHODIMP AXPlatformNodeWin::GetRowHeaderItems(SAFEARRAY** result) {
   WIN_ACCESSIBILITY_API_HISTOGRAM(UMA_API_TABLEITEM_GETROWHEADERITEMS);
   UIA_VALIDATE_CALL_1_ARG(result);
 
-  base::Optional<int> row = GetTableRow();
+  std::optional<int> row = GetTableRow();
   if (!row)
     return E_FAIL;
 
@@ -1791,7 +1790,7 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
       break;
 
     case UIA_CulturePropertyId: {
-      base::Optional<LCID> lcid = GetCultureAttributeAsLCID();
+      std::optional<LCID> lcid = GetCultureAttributeAsLCID();
       if (!lcid)
         return E_FAIL;
       result->vt = VT_I4;
@@ -1932,7 +1931,7 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
       break;
 
     case UIA_LocalizedControlTypePropertyId: {
-      base::string16 localized_control_type = GetRoleDescription();
+      std::u16string localized_control_type = GetRoleDescription();
       if (!localized_control_type.empty()) {
         result->vt = VT_BSTR;
         result->bstrVal = SysAllocString(localized_control_type.c_str());
@@ -2042,7 +2041,7 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
       break;
 
     case UIA_PositionInSetPropertyId: {
-      base::Optional<int> pos_in_set = GetPosInSet();
+      std::optional<int> pos_in_set = GetPosInSet();
       if (pos_in_set) {
         result->vt = VT_I4;
         result->intVal = *pos_in_set;
@@ -2062,7 +2061,7 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
     }
 
     case UIA_SizeOfSetPropertyId: {
-      base::Optional<int> set_size = GetSetSize();
+      std::optional<int> set_size = GetSetSize();
       if (set_size) {
         result->vt = VT_I4;
         result->intVal = *set_size;
@@ -2071,7 +2070,7 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
     }
 
     case UIA_LandmarkTypePropertyId: {
-      base::Optional<LONG> landmark_type = ComputeUIALandmarkType();
+      std::optional<LONG> landmark_type = ComputeUIALandmarkType();
       if (landmark_type) {
         result->vt = VT_I4;
         result->intVal = landmark_type.value();
@@ -2080,7 +2079,7 @@ HRESULT AXPlatformNodeWin::GetPropertyValueImpl(PROPERTYID property_id,
     }
 
     case UIA_LocalizedLandmarkTypePropertyId: {
-      base::string16 localized_landmark_type =
+      std::u16string localized_landmark_type =
           GetDelegate()->GetLocalizedStringForLandmarkType();
       if (!localized_landmark_type.empty()) {
         result->vt = VT_BSTR;
@@ -2251,8 +2250,8 @@ STDMETHODIMP AXPlatformNodeWin::InternalQueryInterface(
 
 HRESULT AXPlatformNodeWin::GetTextAttributeValue(
     TEXTATTRIBUTEID attribute_id,
-    const base::Optional<int>& start_offset,
-    const base::Optional<int>& end_offset,
+    const std::optional<int>& start_offset,
+    const std::optional<int>& end_offset,
     base::win::VariantVector* result) {
   DCHECK(!start_offset || start_offset.value() >= 0);
   DCHECK(!end_offset || end_offset.value() >= 0);
@@ -2268,7 +2267,7 @@ HRESULT AXPlatformNodeWin::GetTextAttributeValue(
       result->Insert<VT_I4>(ComputeUIABulletStyle());
       break;
     case UIA_CultureAttributeId: {
-      base::Optional<LCID> lcid = GetCultureAttributeAsLCID();
+      std::optional<LCID> lcid = GetCultureAttributeAsLCID();
       if (!lcid)
         return E_FAIL;
       result->Insert<VT_I4>(lcid.value());
@@ -2278,7 +2277,7 @@ HRESULT AXPlatformNodeWin::GetTextAttributeValue(
       result->Insert<VT_BSTR>(GetFontNameAttributeAsBSTR());
       break;
     case UIA_FontSizeAttributeId: {
-      base::Optional<float> font_size_in_points = GetFontSizeInPoints();
+      std::optional<float> font_size_in_points = GetFontSizeInPoints();
       if (font_size_in_points) {
         result->Insert<VT_R8>(*font_size_in_points);
       }
@@ -2333,7 +2332,7 @@ HRESULT AXPlatformNodeWin::GetTextAttributeValue(
       result->Insert<VT_I4>(ComputeUIAStyleId());
       break;
     case UIA_HorizontalTextAlignmentAttributeId: {
-      base::Optional<HorizontalTextAlignment> horizontal_text_alignment =
+      std::optional<HorizontalTextAlignment> horizontal_text_alignment =
           AXTextAlignToUIAHorizontalTextAlignment(GetData().GetTextAlign());
       if (horizontal_text_alignment)
         result->Insert<VT_I4>(*horizontal_text_alignment);
@@ -2360,8 +2359,8 @@ HRESULT AXPlatformNodeWin::GetTextAttributeValue(
 }
 
 HRESULT AXPlatformNodeWin::GetAnnotationTypesAttribute(
-    const base::Optional<int>& start_offset,
-    const base::Optional<int>& end_offset,
+    const std::optional<int>& start_offset,
+    const std::optional<int>& end_offset,
     base::win::VariantVector* result) {
   base::win::VariantVector variant_vector;
 
@@ -2392,8 +2391,8 @@ HRESULT AXPlatformNodeWin::GetAnnotationTypesAttribute(
   return S_OK;
 }
 
-base::Optional<LCID> AXPlatformNodeWin::GetCultureAttributeAsLCID() const {
-  const base::string16 language =
+std::optional<LCID> AXPlatformNodeWin::GetCultureAttributeAsLCID() const {
+  const std::u16string language =
       GetInheritedString16Attribute(ax::mojom::StringAttribute::kLanguage);
   const LCID lcid =
       LocaleNameToLCID(language.c_str(), LOCALE_ALLOW_NEUTRAL_NAMES);
@@ -2464,7 +2463,7 @@ LONG AXPlatformNodeWin::ComputeUIAStyleId() const {
 }
 
 // static
-base::Optional<HorizontalTextAlignment>
+std::optional<HorizontalTextAlignment>
 AXPlatformNodeWin::AXTextAlignToUIAHorizontalTextAlignment(
     ax::mojom::TextAlign text_align) {
   switch (text_align) {
@@ -2570,8 +2569,8 @@ void AXPlatformNodeWin::AggregateRangesForMarkerType(
 
 AXPlatformNodeWin::MarkerTypeRangeResult
 AXPlatformNodeWin::GetMarkerTypeFromRange(
-    const base::Optional<int>& start_offset,
-    const base::Optional<int>& end_offset,
+    const std::optional<int>& start_offset,
+    const std::optional<int>& end_offset,
     ax::mojom::MarkerType marker_type) {
   DCHECK(IsText() || IsPlainTextField());
   std::vector<std::pair<int, int>> relevant_ranges;
@@ -2610,7 +2609,7 @@ AXPlatformNodeWin::GetMarkerTypeFromRange(
             sort_ranges_by_start_offset);
 
   // Validate that the desired range has a contiguous MarkerType.
-  base::Optional<std::pair<int, int>> contiguous_range;
+  std::optional<std::pair<int, int>> contiguous_range;
   for (const std::pair<int, int>& range : relevant_ranges) {
     if (end_offset && range.first > end_offset.value())
       break;
@@ -3176,7 +3175,7 @@ bool AXPlatformNodeWin::IsWebAreaForPresentationalIframe() {
   return parent->GetData().role == ax::mojom::Role::kIframePresentational;
 }
 
-base::string16 AXPlatformNodeWin::UIAAriaRole() {
+std::u16string AXPlatformNodeWin::UIAAriaRole() {
   // If this is a web area for a presentational iframe, give it a role of
   // something other than document so that the fact that it's a separate doc
   // is not exposed to AT.
@@ -3687,8 +3686,8 @@ base::string16 AXPlatformNodeWin::UIAAriaRole() {
   return L"document";
 }
 
-base::string16 AXPlatformNodeWin::ComputeUIAProperties() {
-  std::vector<base::string16> properties;
+std::u16string AXPlatformNodeWin::ComputeUIAProperties() {
+  std::vector<std::u16string> properties;
   const AXNodeData& data = GetData();
 
   BoolAttributeToUIAAriaProperty(
@@ -3839,13 +3838,13 @@ base::string16 AXPlatformNodeWin::ComputeUIAProperties() {
     StringAttributeToUIAAriaProperty(
         properties, ax::mojom::StringAttribute::kValue, "valuetext");
 
-    base::string16 value_now = GetRangeValueText();
+    std::u16string value_now = GetRangeValueText();
     SanitizeStringAttributeForUIAAriaProperty(value_now, &value_now);
     if (!value_now.empty())
       properties.push_back(L"valuenow=" + value_now);
   }
 
-  base::string16 result = base::JoinString(properties, L";");
+  std::u16string result = base::JoinString(properties, L";");
   return result;
 }
 
@@ -4526,7 +4525,7 @@ bool AXPlatformNodeWin::IsUIAControl() const {
            (data.IsIgnored() && !data.HasState(ax::mojom::State::kFocusable)));
 }
 
-base::Optional<LONG> AXPlatformNodeWin::ComputeUIALandmarkType() const {
+std::optional<LONG> AXPlatformNodeWin::ComputeUIALandmarkType() const {
   const AXNodeData& data = GetData();
   switch (data.role) {
     case ax::mojom::Role::kBanner:
@@ -4616,8 +4615,8 @@ bool AXPlatformNodeWin::ShouldHideChildrenForUIA() const {
   }
 }
 
-base::string16 AXPlatformNodeWin::GetValue() const {
-  base::string16 value = AXPlatformNodeBase::GetValue();
+std::u16string AXPlatformNodeWin::GetValue() const {
+  std::u16string value = AXPlatformNodeBase::GetValue();
 
   // If this doesn't have a value and is linked then set its value to the URL
   // attribute. This allows screen readers to read an empty link's
@@ -4839,7 +4838,7 @@ int AXPlatformNodeWin::MSAAState() const {
 }
 
 // static
-base::Optional<DWORD> AXPlatformNodeWin::MojoEventToMSAAEvent(
+std::optional<DWORD> AXPlatformNodeWin::MojoEventToMSAAEvent(
     ax::mojom::Event event) {
   switch (event) {
     case ax::mojom::Event::kAlert:
@@ -4885,7 +4884,7 @@ base::Optional<DWORD> AXPlatformNodeWin::MojoEventToMSAAEvent(
 }
 
 // static
-base::Optional<EVENTID> AXPlatformNodeWin::MojoEventToUIAEvent(
+std::optional<EVENTID> AXPlatformNodeWin::MojoEventToUIAEvent(
     ax::mojom::Event event) {
   if (!::switches::IsExperimentalAccessibilityPlatformUIAEnabled())
     return base::nullopt;
@@ -4915,7 +4914,7 @@ base::Optional<EVENTID> AXPlatformNodeWin::MojoEventToUIAEvent(
 }
 
 // static
-base::Optional<PROPERTYID> AXPlatformNodeWin::MojoEventToUIAProperty(
+std::optional<PROPERTYID> AXPlatformNodeWin::MojoEventToUIAProperty(
     ax::mojom::Event event) {
   if (!::switches::IsExperimentalAccessibilityPlatformUIAEnabled())
     return base::nullopt;
@@ -4948,7 +4947,7 @@ BSTR AXPlatformNodeWin::GetValueAttributeAsBstr(AXPlatformNodeWin* target) {
   // attribute. The second set of special cases only apply if the value
   // attribute for the node is empty.  That is, if
   // ax::mojom::StringAttribute::kValue is empty, we do something special.
-  base::string16 result;
+  std::u16string result;
 
   //
   // Color Well special case (Use ax::mojom::IntAttribute::kColorValue)
@@ -4961,7 +4960,7 @@ BSTR AXPlatformNodeWin::GetValueAttributeAsBstr(AXPlatformNodeWin* target) {
     unsigned int red = SkColorGetR(color);
     unsigned int green = SkColorGetG(color);
     unsigned int blue = SkColorGetB(color);
-    base::string16 value_text;
+    std::u16string value_text;
     value_text = base::NumberToString16(red * 100 / 255) + L"% red " +
                  base::NumberToString16(green * 100 / 255) + L"% green " +
                  base::NumberToString16(blue * 100 / 255) + L"% blue";
@@ -5018,7 +5017,7 @@ BSTR AXPlatformNodeWin::GetValueAttributeAsBstr(AXPlatformNodeWin* target) {
 HRESULT AXPlatformNodeWin::GetStringAttributeAsBstr(
     ax::mojom::StringAttribute attribute,
     BSTR* value_bstr) const {
-  base::string16 str;
+  std::u16string str;
 
   if (!GetString16Attribute(attribute, &str))
     return S_FALSE;
@@ -5030,7 +5029,7 @@ HRESULT AXPlatformNodeWin::GetStringAttributeAsBstr(
 }
 
 HRESULT AXPlatformNodeWin::GetNameAsBstr(BSTR* value_bstr) const {
-  base::string16 str = GetNameAsString16();
+  std::u16string str = GetNameAsString16();
   *value_bstr = SysAllocString(str.c_str());
   DCHECK(*value_bstr);
   return S_OK;
@@ -5141,14 +5140,14 @@ double AXPlatformNodeWin::GetVerticalScrollPercent() {
 }
 
 BSTR AXPlatformNodeWin::GetFontNameAttributeAsBSTR() const {
-  const base::string16 string =
+  const std::u16string string =
       GetInheritedString16Attribute(ax::mojom::StringAttribute::kFontFamily);
 
   return SysAllocString(string.c_str());
 }
 
 BSTR AXPlatformNodeWin::GetStyleNameAttributeAsBSTR() const {
-  base::string16 style_name =
+  std::u16string style_name =
       GetDelegate()->GetStyleNameAttributeAsLocalizedString();
 
   return SysAllocString(style_name.c_str());
@@ -5241,7 +5240,7 @@ AXPlatformNodeWin::GetPatternProviderFactoryMethod(PATTERNID pattern_id) {
       // that any control implementing ITableProvider must also expose a column
       // and/or row header relationship for each child element.
       if (IsTableLike(data.role)) {
-        base::Optional<bool> table_has_headers =
+        std::optional<bool> table_has_headers =
             GetDelegate()->GetTableHasColumnOrRowHeaderNode();
         if (table_has_headers.has_value() && table_has_headers.value()) {
           return &PatternProvider<ITableProvider>;
@@ -5256,7 +5255,7 @@ AXPlatformNodeWin::GetPatternProviderFactoryMethod(PATTERNID pattern_id) {
       // expose the relationship between the individual cell and its row and
       // column information.
       if (IsCellOrTableHeader(data.role)) {
-        base::Optional<bool> table_has_headers =
+        std::optional<bool> table_has_headers =
             GetDelegate()->GetTableHasColumnOrRowHeaderNode();
         if (table_has_headers.has_value() && table_has_headers.value()) {
           return &PatternProvider<ITableItemProvider>;

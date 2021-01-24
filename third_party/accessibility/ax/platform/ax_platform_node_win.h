@@ -6,6 +6,8 @@
 #ifndef UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_WIN_H_
 #define UI_ACCESSIBILITY_PLATFORM_AX_PLATFORM_NODE_WIN_H_
 
+#include <atlbase.h>
+#include <atlcom.h>
 #include <objbase.h>
 #include <oleacc.h>
 #include <oleauto.h>
@@ -18,18 +20,15 @@
 #include <vector>
 
 #include "base/compiler_specific.h"
-#include "base/gtest_prod_util.h"
-#include "base/metrics/histogram_macros.h"
-#include "base/observer_list.h"
-#include "base/win/atl.h"
-#include "third_party/iaccessible2/ia2_api_all.h"
-#include "ui/accessibility/ax_enums.mojom-forward.h"
-#include "ui/accessibility/ax_export.h"
-#include "ui/accessibility/ax_text_utils.h"
-#include "ui/accessibility/platform/ax_platform_node_base.h"
-#include "ui/accessibility/platform/ax_platform_text_boundary.h"
-#include "ui/accessibility/platform/ichromeaccessible.h"
-#include "ui/gfx/range/range.h"
+// #include "base/metrics/histogram_macros.h"
+//#include "base/observer_list.h"
+//#include "base/win/atl.h"
+//#include "ui/accessibility/ax_enums.mojom-forward.h"
+#include "ax/ax_export.h"
+//#include "ax/ax_text_utils.h"
+#include "ax/platform/ax_platform_node_base.h"
+#include "ax/platform/ax_platform_text_boundary.h"
+#include "gfx/range/range.h"
 
 // IMPORTANT!
 // These values are written to logs.  Do not renumber or delete
@@ -406,7 +405,7 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
 
   // AXPlatformNodeBase overrides.
   void Destroy() override;
-  base::string16 GetValue() const override;
+  std::u16string GetValue() const override;
   bool IsPlatformCheckable() const override;
 
   //
@@ -644,8 +643,8 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
   // If either |start_offset| or |end_offset| are not provided then the
   // endpoint is treated as the start or end of the node respectively.
   HRESULT GetTextAttributeValue(TEXTATTRIBUTEID attribute_id,
-                                const base::Optional<int>& start_offset,
-                                const base::Optional<int>& end_offset,
+                                const std::optional<int>& start_offset,
+                                const std::optional<int>& end_offset,
                                 base::win::VariantVector* result);
 
   // IRawElementProviderSimple support method.
@@ -668,7 +667,7 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
   // Updates the active composition range and fires UIA text edit event about
   // composition (active or committed)
   void OnActiveComposition(const gfx::Range& range,
-                           const base::string16& active_composition_text,
+                           const std::u16string& active_composition_text,
                            bool is_composition_committed);
   // Returns true if there is an active composition
   bool HasActiveComposition() const;
@@ -686,20 +685,20 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
   AXPlatformNodeWin* GetFirstTextOnlyDescendant();
 
   // Convert a mojo event to an MSAA event. Exposed for testing.
-  static base::Optional<DWORD> MojoEventToMSAAEvent(ax::mojom::Event event);
+  static std::optional<DWORD> MojoEventToMSAAEvent(ax::mojom::Event event);
 
   // Convert a mojo event to a UIA event. Exposed for testing.
-  static base::Optional<EVENTID> MojoEventToUIAEvent(ax::mojom::Event event);
+  static std::optional<EVENTID> MojoEventToUIAEvent(ax::mojom::Event event);
 
   // Convert a mojo event to a UIA property id. Exposed for testing.
-  static base::Optional<PROPERTYID> MojoEventToUIAProperty(
+  static std::optional<PROPERTYID> MojoEventToUIAProperty(
       ax::mojom::Event event);
 
  protected:
   // This is hard-coded; all products based on the Chromium engine will have the
   // same framework name, so that assistive technology can detect any
   // Chromium-based product.
-  static constexpr const base::char16* FRAMEWORK_ID = L"Chrome";
+  static constexpr const wchar_t* FRAMEWORK_ID = L"Chrome";
 
   AXPlatformNodeWin();
 
@@ -707,9 +706,9 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
 
   int MSAARole();
 
-  base::string16 UIAAriaRole();
+  std::u16string UIAAriaRole();
 
-  base::string16 ComputeUIAProperties();
+  std::u16string ComputeUIAProperties();
 
   LONG ComputeUIAControlType();
 
@@ -721,7 +720,7 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
 
   bool IsUIAControl() const;
 
-  base::Optional<LONG> ComputeUIALandmarkType() const;
+  std::optional<LONG> ComputeUIALandmarkType() const;
 
   bool IsInaccessibleDueToAncestor() const;
 
@@ -762,43 +761,43 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
   // Escapes characters in string attributes as required by the UIA Aria
   // Property Spec. It's okay for input to be the same as output.
   static void SanitizeStringAttributeForUIAAriaProperty(
-      const base::string16& input,
-      base::string16* output);
+      const std::u16string& input,
+      std::u16string* output);
 
   // If the string attribute |attribute| is present, add its value as a
   // UIA AriaProperties Property with the name |uia_aria_property|.
-  void StringAttributeToUIAAriaProperty(std::vector<base::string16>& properties,
+  void StringAttributeToUIAAriaProperty(std::vector<std::u16string>& properties,
                                         ax::mojom::StringAttribute attribute,
                                         const char* uia_aria_property);
 
   // If the bool attribute |attribute| is present, add its value as a
   // UIA AriaProperties Property with the name |uia_aria_property|.
-  void BoolAttributeToUIAAriaProperty(std::vector<base::string16>& properties,
+  void BoolAttributeToUIAAriaProperty(std::vector<std::u16string>& properties,
                                       ax::mojom::BoolAttribute attribute,
                                       const char* uia_aria_property);
 
   // If the int attribute |attribute| is present, add its value as a
   // UIA AriaProperties Property with the name |uia_aria_property|.
-  void IntAttributeToUIAAriaProperty(std::vector<base::string16>& properties,
+  void IntAttributeToUIAAriaProperty(std::vector<std::u16string>& properties,
                                      ax::mojom::IntAttribute attribute,
                                      const char* uia_aria_property);
 
   // If the float attribute |attribute| is present, add its value as a
   // UIA AriaProperties Property with the name |uia_aria_property|.
-  void FloatAttributeToUIAAriaProperty(std::vector<base::string16>& properties,
+  void FloatAttributeToUIAAriaProperty(std::vector<std::u16string>& properties,
                                        ax::mojom::FloatAttribute attribute,
                                        const char* uia_aria_property);
 
   // If the state |state| exists, set the
   // UIA AriaProperties Property with the name |uia_aria_property| to "true".
   // Otherwise set the AriaProperties Property to "false".
-  void StateToUIAAriaProperty(std::vector<base::string16>& properties,
+  void StateToUIAAriaProperty(std::vector<std::u16string>& properties,
                               ax::mojom::State state,
                               const char* uia_aria_property);
 
   // If the Html attribute |html_attribute_name| is present, add its value as a
   // UIA AriaProperties Property with the name |uia_aria_property|.
-  void HtmlAttributeToUIAAriaProperty(std::vector<base::string16>& properties,
+  void HtmlAttributeToUIAAriaProperty(std::vector<std::u16string>& properties,
                                       const char* html_attribute_name,
                                       const char* uia_aria_property);
 
@@ -879,12 +878,12 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
   //
 
   // Computes the AnnotationTypes Attribute for the current node.
-  HRESULT GetAnnotationTypesAttribute(const base::Optional<int>& start_offset,
-                                      const base::Optional<int>& end_offset,
+  HRESULT GetAnnotationTypesAttribute(const std::optional<int>& start_offset,
+                                      const std::optional<int>& end_offset,
                                       base::win::VariantVector* result);
   // Lookup the LCID for the language this node is using.
   // Returns base::nullopt if there was an error.
-  base::Optional<LCID> GetCultureAttributeAsLCID() const;
+  std::optional<LCID> GetCultureAttributeAsLCID() const;
   // Converts an int attribute to a COLORREF
   COLORREF GetIntAttributeAsCOLORREF(ax::mojom::IntAttribute attribute) const;
   // Converts the ListStyle to UIA BulletStyle
@@ -892,7 +891,7 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
   // Helper to get the UIA StyleId enumeration for this node
   LONG ComputeUIAStyleId() const;
   // Convert mojom TextAlign to UIA HorizontalTextAlignment enumeration
-  static base::Optional<HorizontalTextAlignment>
+  static std::optional<HorizontalTextAlignment>
   AXTextAlignToUIAHorizontalTextAlignment(ax::mojom::TextAlign text_align);
   // Converts IntAttribute::kHierarchicalLevel to UIA StyleId enumeration
   static LONG AXHierarchicalLevelToUIAStyleId(int32_t hierarchical_level);
@@ -922,8 +921,8 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
   // Determine if a text range overlaps a |marker_type|, and whether
   // the overlap is a partial or or complete match.
   MarkerTypeRangeResult GetMarkerTypeFromRange(
-      const base::Optional<int>& start_offset,
-      const base::Optional<int>& end_offset,
+      const std::optional<int>& start_offset,
+      const std::optional<int>& end_offset,
       ax::mojom::MarkerType marker_type);
 
   bool IsAncestorComboBox();
@@ -956,7 +955,7 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
   // Fires UIA text edit event about composition (active or committed)
   void FireUiaTextEditTextChangedEvent(
       const gfx::Range& range,
-      const base::string16& active_composition_text,
+      const std::u16string& active_composition_text,
       bool is_composition_committed);
 
   // Return true if the given element is valid enough to be returned as a value

@@ -3,7 +3,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#include "ui/accessibility/platform/ax_platform_node_win_unittest.h"
+#include "ax_platform_node_win_unittest.h"
 
 #include <oleacc.h>
 #include <wrl/client.h>
@@ -26,9 +26,9 @@
 #include "ui/accessibility/accessibility_features.h"
 #include "ui/accessibility/ax_enums.mojom.h"
 #include "ui/accessibility/ax_node_data.h"
-#include "ui/accessibility/platform/ax_fragment_root_win.h"
-#include "ui/accessibility/platform/ax_platform_node_win.h"
-#include "ui/accessibility/platform/test_ax_node_wrapper.h"
+#include "ax_fragment_root_win.h"
+#include "ax_platform_node_win.h"
+#include "test_ax_node_wrapper.h"
 #include "ui/base/win/atl_module.h"
 
 using Microsoft::WRL::ComPtr;
