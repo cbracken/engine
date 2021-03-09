@@ -8,8 +8,8 @@
 
 #include "base/no_destructor.h"
 #include "base/strings/string_number_conversions.h"
-#include "ui/accessibility/platform/ax_fragment_root_delegate_win.h"
-#include "ui/accessibility/platform/ax_platform_node_win.h"
+#include "ax_fragment_root_delegate_win.h"
+#include "ax_platform_node_win.h"
 #include "ui/accessibility/platform/uia_registrar_win.h"
 #include "ui/base/win/atl_module.h"
 
