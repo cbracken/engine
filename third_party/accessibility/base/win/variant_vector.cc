@@ -163,7 +163,7 @@ VARIANT VariantVector::ReleaseAsSafearrayVariant() {
     // VARTYPES. For example a value within VT_TYPEMASK that's joined something
     // outside the typemask like VT_ARRAY or VT_BYREF.
     default:
-      NOTREACHED();
+      BASE_UNREACHABLE();
       break;
   }
 
@@ -306,7 +306,7 @@ int VariantVector::Compare(SAFEARRAY* safearray, bool ignore_case) const {
     // VARTYPES. For example a value within VT_TYPEMASK that's joined something
     // outside the typemask like VT_ARRAY or VT_BYREF.
     default:
-      NOTREACHED();
+      BASE_UNREACHABLE();
       compare_result = 1;
       break;
   }
@@ -324,8 +324,9 @@ SAFEARRAY* VariantVector::CreateAndPopulateSafearray() {
   if (!scoped_safearray.Get()) {
     constexpr size_t kElementSize =
         sizeof(typename internal::VariantUtil<ElementVartype>::Type);
-    base::TerminateBecauseOutOfMemory(sizeof(SAFEARRAY) +
-                                      (Size() * kElementSize));
+    // base::TerminateBecauseOutOfMemory(sizeof(SAFEARRAY) +
+    //                                   (Size() * kElementSize));
+    exit(1);
   }
 
   std::optional<ScopedSafearray::LockScope<ElementVartype>> lock_scope =
