@@ -8,9 +8,9 @@
 #include <objbase.h>
 
 #include "base/base_export.h"
-#include "base/check_op.h"
+// #include "base/check_op.h"
 #include "base/macros.h"
-#include "base/optional.h"
+// #include "base/optional.h"
 #include "base/win/variant_util.h"
 
 namespace base {
@@ -53,7 +53,7 @@ class BASE_EXPORT ScopedSafearray {
           array_size_(std::exchange(other.array_size_, 0U)) {}
 
     LockScope<ElementVartype>& operator=(LockScope<ElementVartype>&& other) {
-      DCHECK_NE(this, &other);
+      BASE_DCHECK(this != &other);
       Reset();
       safearray_ = std::exchange(other.safearray_, nullptr);
       vartype_ = std::exchange(other.vartype_, VT_EMPTY);
@@ -80,8 +80,8 @@ class BASE_EXPORT ScopedSafearray {
     const_reference operator[](int index) const { return at(index); }
 
     reference at(size_t index) {
-      DCHECK_NE(array_, nullptr);
-      DCHECK_LT(index, array_size_);
+      BASE_DCHECK(array_ != nullptr);
+      BASE_DCHECK(index < array_size_);
       return array_[index];
     }
     const_reference at(size_t index) const {
@@ -158,7 +158,7 @@ class BASE_EXPORT ScopedSafearray {
   void Destroy() {
     if (safearray_) {
       HRESULT hr = SafeArrayDestroy(safearray_);
-      DCHECK_EQ(S_OK, hr);
+      BASE_DCHECK(S_OK == hr);
       safearray_ = nullptr;
     }
   }
@@ -191,17 +191,17 @@ class BASE_EXPORT ScopedSafearray {
 
   // Returns the number of elements in a dimension of the array.
   size_t GetCount(UINT dimension = 0) const {
-    DCHECK(safearray_);
+    BASE_DCHECK(safearray_);
     // Initialize |lower| and |upper| so this method will return zero if either
     // SafeArrayGetLBound or SafeArrayGetUBound returns failure because they
     // only write to the output parameter when successful.
     LONG lower = 0;
     LONG upper = -1;
-    DCHECK_LT(dimension, SafeArrayGetDim(safearray_));
+    BASE_DCHECK(dimension < SafeArrayGetDim(safearray_));
     HRESULT hr = SafeArrayGetLBound(safearray_, dimension + 1, &lower);
-    DCHECK(SUCCEEDED(hr));
+    BASE_DCHECK(SUCCEEDED(hr));
     hr = SafeArrayGetUBound(safearray_, dimension + 1, &upper);
-    DCHECK(SUCCEEDED(hr));
+    BASE_DCHECK(SUCCEEDED(hr));
     return (upper - lower + 1);
   }
 

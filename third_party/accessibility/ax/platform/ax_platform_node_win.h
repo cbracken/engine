@@ -54,7 +54,7 @@ class VariantVector;
 namespace ui {
 
 class AXPlatformNodeWin;
-class AXPlatformRelationWin;
+// class AXPlatformRelationWin;
 
 // A simple interface for a class that wants to be notified when Windows
 // accessibility APIs are used by a client, a strong indication that full
@@ -78,7 +78,7 @@ class AXPlatformRelationWin;
 // TODO(nektar): Remove multithread superclass since we don't support it.
 class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
     AXPlatformNodeWin : public CComObjectRootEx<CComMultiThreadModel>,
-                        public IAccessible,
+                        public IDispatchImpl<IAccessible>,
                         public IExpandCollapseProvider,
                         public IGridItemProvider,
                         public IGridProvider,
@@ -129,7 +129,7 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
   void Init(AXPlatformNodeDelegate* delegate) override;
 
   // Clear any AXPlatformRelationWin nodes owned by this node.
-  void ClearOwnRelations();
+//   void ClearOwnRelations();
 
   // AXPlatformNode overrides.
   gfx::NativeViewAccessible GetNativeViewAccessible() override;
@@ -539,7 +539,7 @@ class AX_EXPORT __declspec(uuid("26f5641a-246d-457b-a96d-07f3fae6acf2"))
   void Dispose() override;
 
   // Relationships between this node and other nodes.
-  std::vector<Microsoft::WRL::ComPtr<AXPlatformRelationWin>> relations_;
+//   std::vector<Microsoft::WRL::ComPtr<AXPlatformRelationWin>> relations_;
 
   AXHypertext old_hypertext_;
 
