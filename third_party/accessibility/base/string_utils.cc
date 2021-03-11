@@ -65,6 +65,19 @@ std::string JoinString(std::vector<std::string> tokens, std::string delimiter) {
   return imploded.str();
 }
 
+std::u16string JoinString(std::vector<std::u16string> tokens, std::u16string delimiter) {
+  std::u16string result;
+  for (size_t i = 0; i < tokens.size(); i++) {
+    if (i == tokens.size() - 1) {
+      result.append(tokens[i]);
+    } else {
+      result.append(tokens[i]);
+      result.append(delimiter);
+    }
+  }
+  return result;
+}
+
 void ReplaceChars(std::string in,
                   std::string from,
                   std::string to,
