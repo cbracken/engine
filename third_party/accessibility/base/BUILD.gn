@@ -33,6 +33,9 @@ source_set("base") {
       "win/variant_vector.h",
       "win/variant_vector.cc",
     ]
+    libs = [
+      "propsys.lib",
+    ]
   }
   if (is_mac) {
     sources += [
