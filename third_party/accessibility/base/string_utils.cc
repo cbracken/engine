@@ -90,6 +90,18 @@ void ReplaceChars(std::string in,
   *out = in;
 }
 
+void ReplaceChars(std::u16string in,
+                  std::u16string from,
+                  std::u16string to,
+                  std::u16string* out) {
+  size_t pos = in.find(from);
+  while (pos != std::string::npos) {
+    in.replace(pos, from.size(), to);
+    pos = in.find(from, pos + to.size());
+  }
+  *out = in;
+}
+
 const std::string& EmptyString() {
   static const base::NoDestructor<std::string> s;
   return *s;
