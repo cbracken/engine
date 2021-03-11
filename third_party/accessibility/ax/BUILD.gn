@@ -87,6 +87,10 @@ source_set("ax") {
       "platform/ax_platform_node_win.h",
       "platform/ax_platform_node_win.cc",
     ]
+    libs = [
+      "oleacc.lib",
+      "uiautomationcore.lib",
+    ]
   }
 
   public_deps = [

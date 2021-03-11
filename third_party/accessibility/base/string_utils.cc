@@ -28,6 +28,11 @@ std::string UTF16ToUTF8(std::u16string src) {
   return convert.to_bytes(src);
 }
 
+std::string WideToUTF8(const wchar_t* src) {
+  std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
+  return convert.to_bytes(src);
+}
+
 std::u16string NumberToString16(float number) {
   return ASCIIToUTF16(NumberToString(number));
 }
@@ -42,6 +47,10 @@ std::string NumberToString(unsigned int number) {
 
 std::string NumberToString(float number) {
   return std::to_string(number);
+}
+
+BSTR String16ToBSTR(std::u16string src) {
+  return ::SysAllocString((wchar_t*)src.data());
 }
 
 std::string JoinString(std::vector<std::string> tokens, std::string delimiter) {
