@@ -1011,8 +1011,9 @@ IFACEMETHODIMP AXPlatformNodeWin::get_accDefaultAction(VARIANT var_id,
     return S_FALSE;
   }
 
+  // TODO(gw280): Use localized strings
   std::u16string action_verb = base::UTF8ToUTF16(
-      ui::ToLocalizedString(static_cast<ax::mojom::DefaultActionVerb>(action)));
+      ui::ToString(static_cast<ax::mojom::DefaultActionVerb>(action)));
   if (action_verb.empty()) {
     *def_action = nullptr;
     return S_FALSE;
