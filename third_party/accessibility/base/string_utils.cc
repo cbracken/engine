@@ -19,13 +19,17 @@ std::u16string ASCIIToUTF16(std::string src) {
 }
 
 std::u16string UTF8ToUTF16(std::string src) {
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-  return convert.from_bytes(src);
+  // TODO(gw280): MSVC balks if you try and use char16_t here
+  std::wstring_convert<std::codecvt_utf8_utf16<int16_t>, int16_t> convert;
+  std::basic_string<int16_t> converted = convert.from_bytes(src);
+  std::u16string converted_as_u16((char16_t*)converted.data());
+  return converted_as_u16;
 }
 
 std::string UTF16ToUTF8(std::u16string src) {
-  std::wstring_convert<std::codecvt_utf8_utf16<char16_t>, char16_t> convert;
-  return convert.to_bytes(src);
+  // TODO(gw280): MSVC balks if you try and use char16_t here
+  std::wstring_convert<std::codecvt_utf8_utf16<int16_t>, int16_t> convert;
+  return convert.to_bytes((int16_t*)src.data());
 }
 
 std::string WideToUTF8(const wchar_t* src) {
