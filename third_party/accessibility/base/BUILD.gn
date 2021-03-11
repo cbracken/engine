@@ -26,6 +26,7 @@ source_set("base") {
     # TODO: codecvt_utf8_utf16 is deprecated in C++17
     defines = [ "_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS" ]
     sources += [
+      "win/atl.h",
       "win/enum_variant.h",
       "win/enum_variant.cc",
       "win/scoped_bstr.h",
