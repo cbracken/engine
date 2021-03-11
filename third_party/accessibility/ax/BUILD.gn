@@ -88,6 +88,8 @@ source_set("ax") {
     sources += [
       "platform/ax_platform_node_win.h",
       "platform/ax_platform_node_win.cc",
+      "platform/uia_registrar_win.h",
+      "platform/uia_registrar_win.cc",
     ]
     libs = [
       "oleacc.lib",
