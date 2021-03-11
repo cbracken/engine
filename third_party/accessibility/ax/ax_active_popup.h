@@ -5,6 +5,8 @@
 #ifndef UI_ACCESSIBILITY_AX_ACTIVE_POPUP_H_
 #define UI_ACCESSIBILITY_AX_ACTIVE_POPUP_H_
 
+#include <optional>
+
 #include "base/macros.h"
 #include "ax/ax_export.h"
 
