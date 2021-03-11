@@ -49,6 +49,11 @@ std::string NumberToString(float number) {
   return std::to_string(number);
 }
 
+std::string NumberToString(double number) {
+  return std::to_string(number);
+}
+
+
 BSTR String16ToBSTR(std::u16string src) {
   return ::SysAllocString((wchar_t*)src.data());
 }
