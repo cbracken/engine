@@ -1,19 +1,18 @@
-// Copyright (c) 2011 The Chromium Authors. All rights reserved.
+// Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef BASE_WIN_SCOPED_BSTR_H_
-#define BASE_WIN_SCOPED_BSTR_H_
+#ifndef FLUTTER_SHELL_PLATFORM_WINDOWS_SCOPED_BSTR_H_
+#define FLUTTER_SHELL_PLATFORM_WINDOWS_SCOPED_BSTR_H_
 
 #include <windows.h>
 
 #include <oleauto.h>
-#include <stddef.h>
 
-#include "base/base_export.h"
-#include "base/check.h"
-#include "base/macros.h"
-#include "base/strings/string_piece.h"
+#include <cstddef>
+
+#include "flutter/third_party/accessibility/base/base_export.h"
+#include "flutter/third_party/accessibility/base/logging.h"
 
 namespace base {
 namespace win {
@@ -28,7 +27,7 @@ class BASE_EXPORT ScopedBstr {
   //
   // NOTE: Do not pass a BSTR to this constructor expecting ownership to
   // be transferred - even though it compiles! ;-)
-  explicit ScopedBstr(WStringPiece non_bstr);
+  explicit ScopedBstr(std::wstring_view non_bstr);
   ~ScopedBstr();
 
   BSTR Get() const { return bstr_; }
@@ -46,7 +45,7 @@ class BASE_EXPORT ScopedBstr {
   // ScopedBstr instance, call |reset| instead.
   //
   // Returns a pointer to the new BSTR.
-  BSTR Allocate(WStringPiece str);
+  BSTR Allocate(std::wstring_view str);
 
   // Allocates a new BSTR with the specified number of bytes.
   // Returns a pointer to the new BSTR.
@@ -80,19 +79,17 @@ class BASE_EXPORT ScopedBstr {
   // Returns the number of bytes allocated for the BSTR.
   size_t ByteLength() const;
 
-  // Forbid comparison of ScopedBstr types.  You should never have the same
-  // BSTR owned by two different scoped_ptrs.
+  // Forbid comparison of ScopedBstr types. You should never have the same BSTR
+  // owned by two different scoped_ptrs.
   bool operator==(const ScopedBstr& bstr2) const = delete;
   bool operator!=(const ScopedBstr& bstr2) const = delete;
 
- protected:
-  BSTR bstr_ = nullptr;
-
  private:
-  DISALLOW_COPY_AND_ASSIGN(ScopedBstr);
+  BSTR bstr_ = nullptr;
+  BASE_DISALLOW_COPY_AND_ASSIGN(ScopedBstr);
 };
 
 }  // namespace win
 }  // namespace base
 
-#endif  // BASE_WIN_SCOPED_BSTR_H_
+#endif  // FLUTTER_SHELL_PLATFORM_WINDOWS_SCOPED_BSTR_H_
